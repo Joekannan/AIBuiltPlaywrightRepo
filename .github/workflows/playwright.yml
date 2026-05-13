@@ -1,0 +1,98 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: '0 6 * * 1-5'   # Mon–Fri 6am UTC nightly regression
+  workflow_dispatch:
+
+env:
+  BASE_URL: ${{ vars.BASE_URL || 'https://www.saucedemo.com' }}
+
+jobs:
+  # Full regression — all browsers — runs on push/schedule/manual
+  test:
+    name: Tests (${{ matrix.browser }})
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run Playwright tests
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          CI: true
+          BASE_URL: ${{ env.BASE_URL }}
+          STANDARD_USER: ${{ secrets.STANDARD_USER }}
+          STANDARD_PASSWORD: ${{ secrets.STANDARD_PASSWORD }}
+
+      - name: Upload HTML Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Traces on Failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: traces-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 7
+
+  # Smoke-only fast check — chromium only — runs on every PR
+  smoke:
+    name: Smoke Tests (PR)
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: npx playwright test --grep @smoke --project=chromium
+        env:
+          CI: true
+          BASE_URL: ${{ env.BASE_URL }}
+          STANDARD_USER: ${{ secrets.STANDARD_USER }}
+          STANDARD_PASSWORD: ${{ secrets.STANDARD_PASSWORD }}
+
+      - name: Upload Smoke Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-report
+          path: playwright-report/
+          retention-days: 7
+

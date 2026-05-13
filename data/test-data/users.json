@@ -1,0 +1,27 @@
+{
+  "standard": {
+    "username": "standard_user",
+    "password": "secret_sauce",
+    "description": "Default user — full access, no issues"
+  },
+  "locked": {
+    "username": "locked_out_user",
+    "password": "secret_sauce",
+    "description": "User locked out of the system"
+  },
+  "problem": {
+    "username": "problem_user",
+    "password": "secret_sauce",
+    "description": "User that triggers UI glitches"
+  },
+  "performance": {
+    "username": "performance_glitch_user",
+    "password": "secret_sauce",
+    "description": "User that introduces artificial delays"
+  },
+  "invalid": {
+    "username": "not_a_user",
+    "password": "wrong_password",
+    "description": "Non-existent credentials for negative tests"
+  }
+}

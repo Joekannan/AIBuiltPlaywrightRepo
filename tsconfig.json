@@ -1,0 +1,61 @@
+{
+  "compilerOptions": {
+    // ── Output target ──────────────────────────────────────────────────────
+    // ES2022 gives us top-level await, class fields, Error.cause, etc.
+    // Matches the Node.js version Playwright runs on.
+    "target": "ES2022",
+
+    // ── Module system ──────────────────────────────────────────────────────
+    // CommonJS to match "type": "commonjs" in package.json.
+    // Playwright's esbuild transpiler handles the actual bundling;
+    // this setting governs tsc type-checking and editor tooling.
+    "module": "commonjs",
+
+    // "bundler" is the modern resolution mode (TS 5+/6+).
+    // Supports package.json exports/imports and works well with esbuild/Playwright.
+    "moduleResolution": "bundler",
+
+    // ── Strict mode ────────────────────────────────────────────────────────
+    // Enables: strictNullChecks, noImplicitAny, strictFunctionTypes,
+    //          strictBindCallApply, strictPropertyInitialization,
+    //          noImplicitThis, alwaysStrict — all at once.
+    "strict": true,
+
+    // ── Interop ────────────────────────────────────────────────────────────
+    "esModuleInterop": true,
+    "resolveJsonModule": true,    // lets you import *.json files with types
+    "skipLibCheck": true,         // skip type-checking inside node_modules
+    "types": ["node"],            // make process, Buffer, etc. available globally
+
+    // ── Path aliases ───────────────────────────────────────────────────────
+    // Allows clean imports throughout the project:
+    //   import { LoginPage }  from '@pages/login.page'
+    //   import { test }       from '@fixtures/base.fixture'
+    //   import users          from '@data/users.json'
+    //   import { formatDate } from '@utils/date.utils'
+    //   import { authHelper } from '@helpers/auth.helper'
+    // Note: "baseUrl" is deprecated in TS6; "paths" is now root-relative by default.
+    "paths": {
+      "@pages/*":    ["./pages/*"],
+      "@fixtures/*": ["./fixtures/*"],
+      "@data/*":     ["./data/test-data/*"],
+      "@utils/*":    ["./utils/*"],
+      "@helpers/*":  ["./helpers/*"]
+    }
+  },
+  // ── Files in scope ─────────────────────────────────────────────────────
+  "include": [
+    "playwright.config.ts",
+    "pages/**/*.ts",
+    "fixtures/**/*.ts",
+    "tests/**/*.ts",
+    "features/**/*.ts",
+    "utils/**/*.ts",
+    "helpers/**/*.ts",
+    "data/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".features-gen"   // generated BDD test files — not hand-authored
+  ]
+}

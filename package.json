@@ -1,0 +1,29 @@
+{
+  "name": "playwright-swaglabs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test tests/",
+    "test:bdd": "bddgen && playwright test --project=bdd",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "cross-env NODE_OPTIONS='' playwright show-report --host 127.0.0.1 --port 9500"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/cli": "^0.1.11",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
+    "cross-env": "^10.1.0",
+    "marked": "^18.0.3",
+    "playwright-bdd": "^8.5.0",
+    "typescript": "^6.0.3"
+  }
+}
