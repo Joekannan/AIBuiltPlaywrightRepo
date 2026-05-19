@@ -7,6 +7,7 @@ export class InventoryPage extends BasePage {
   readonly cartBadge: Locator;
   readonly cartLink: Locator;
   readonly sortDropdown: Locator;
+  readonly activeOptionLabel: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -15,6 +16,7 @@ export class InventoryPage extends BasePage {
     this.cartBadge = page.locator('[data-test="shopping-cart-badge"]');
     this.cartLink = page.locator('[data-test="shopping-cart-link"]');
     this.sortDropdown = page.locator('[data-test="product-sort-container"]');
+    this.activeOptionLabel = page.locator('[data-test="active-option"]');
   }
 
   async getProductCount(): Promise<number> {
@@ -38,7 +40,15 @@ export class InventoryPage extends BasePage {
   }
 
   async getItemNames(): Promise<string[]> {
-    return this.page.locator('.inventory_item_name').allInnerTexts();
+    return this.page.locator('[data-test="inventory-item-name"]').allInnerTexts();
+  }
+
+  async getActiveSortLabel(): Promise<string> {
+    return this.activeOptionLabel.innerText();
+  }
+
+  async getSortOptions(): Promise<string[]> {
+    return this.sortDropdown.locator('option').allInnerTexts();
   }
 
   async getItemPrices(): Promise<number[]> {

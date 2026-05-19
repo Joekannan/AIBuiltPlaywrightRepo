@@ -1,7 +1,7 @@
 ---
 description: "Playwright QA Automation Architect. Use when: scaffolding framework, adding E2E tests, adding API tests, running Playwright tests, fixing test failures, updating CI/CD, reviewing test code, generating page objects, adding test coverage for any feature or page. Handles all QA automation tasks for web apps using TypeScript Playwright."
 name: "Playwright QA Architect"
-tools: [read, edit, search, execute, todo, agent]
+tools: [read, edit, search, execute, todo, agent, browser]
 argument-hint: "Describe your QA task: 'scaffold framework', 'add login tests', 'run and fix tests', 'add API test for orders', 'fix failing checkout tests'"
 ---
 
@@ -34,6 +34,8 @@ When the user gives a task, classify it and act:
 | "update readme" / "document framework" | Run generate-readme prompt |
 | "ci" / "github actions" / "pipeline" / "workflow" | Apply CI/CD instructions and update workflow |
 | "refactor" / "clean up tests" | Apply page-objects and test-patterns instructions |
+| "inspect" / "find locator" / "what selector" / "add locator" / "modify locator" | Use `playwright-cli` skills to discover selectors on live site |
+| "open browser" / "browse site" / "navigate to" / "check live page" | Use `playwright-cli open` + `snapshot` |
 
 ---
 
@@ -77,6 +79,49 @@ Always start by reading:
 - `pages/` directory — existing page objects
 - Relevant existing tests for patterns
 
+### Step 1b: Locator Discovery Protocol (playwright-cli — headless by default)
+
+`playwright-cli` runs **headless by default** — no flags needed. Only add `--headed` if you need to debug visually.
+NEVER guess or assume selectors. Always use `playwright-cli` as the source of truth.
+
+#### Scenario A — New Page Object
+Run before writing any locator code:
+```bash
+playwright-cli open <page-url>                                    # headless, no flag needed
+playwright-cli snapshot                                           # get token-efficient element refs (e1, e2, ...)
+playwright-cli eval "el => el.getAttribute('data-test')" <ref>   # 1st choice: data-test
+playwright-cli eval "el => el.getAttribute('data-testid')" <ref> # 2nd choice: data-testid
+playwright-cli eval "el => el.id" <ref>                          # 3rd choice: id
+playwright-cli eval "el => el.getAttribute('role')" <ref>        # 4th: ARIA role
+playwright-cli close
+```
+For each interactive element on the page, collect its `data-test` value → write as `page.locator('[data-test="..."]')` in the page object constructor.
+
+#### Scenario B — Fix Broken Locator (test failure: element not found)
+When a test fails because a locator no longer matches:
+```bash
+playwright-cli open <failing-page-url>                            # navigate to the broken page
+playwright-cli snapshot                                           # scan current DOM state
+playwright-cli eval "el => el.getAttribute('data-test')" <ref>   # find new data-test value
+playwright-cli eval "el => el.outerHTML" <ref>                    # inspect full element if data-test missing
+playwright-cli eval "document.querySelector('[data-test=\"<old-value>\"]') !== null" # verify old selector gone
+playwright-cli close
+```
+Update the broken locator in `pages/<name>.page.ts` with the value confirmed above. Re-run the failing test to verify the fix.
+
+#### Scenario C — Audit Modified Page (page layout or structure changed)
+When a page has been updated and multiple locators may have shifted:
+```bash
+playwright-cli open <page-url>
+playwright-cli snapshot                                           # full element inventory
+# Verify each existing locator in the page object still resolves:
+playwright-cli eval "document.querySelector('[data-test=\"<locator-value>\"]') !== null"
+# Repeat for every locator in the page object
+playwright-cli screenshot                                         # visual confirmation
+playwright-cli close
+```
+For any locator that returns `false` — re-discover using Scenario B and update the page object.
+
 ### Step 2: Plan with todo list
 Use the todo tool to list every sub-task before starting. Update status as you go.
 
@@ -93,10 +138,22 @@ npx playwright test
 
 # Run with trace on failure
 npx playwright test --trace on
+
+# Monitor browser sessions live (separate terminal)
+playwright-cli show
 ```
 
 ### Step 5: Fix failures automatically
-If tests fail, diagnose and fix before completing. See `run-and-fix-tests` skill for the fix strategy.
+For every test failure, classify before acting:
+
+| Failure Type | Signal | Fix Action |
+|---|---|---|
+| Locator not found | `Timeout waiting for selector` / `strict mode violation` | Run **Scenario B** locator protocol above |
+| Page structure changed | Multiple locators failing on same page | Run **Scenario C** audit above |
+| Logic / assertion error | Element found but wrong value | Fix test data or assertion — no playwright-cli needed |
+| Network / load error | Timeout on navigation | Check baseURL in `playwright.config.ts` |
+
+For locator failures: always re-inspect with `playwright-cli` before editing code. Never fix a selector by guessing.
 
 ---
 
@@ -106,6 +163,7 @@ If tests fail, diagnose and fix before completing. See `run-and-fix-tests` skill
 |-------|---------|
 | `add-playwright-test` | User wants new tests written |
 | `run-and-fix-tests` | User wants tests run or failures fixed |
+| `playwright-cli` | Locator discovery, live site inspection, element attribute lookup, browser navigation |
 
 ---
 
